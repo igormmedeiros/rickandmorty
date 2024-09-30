@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.PathVariable;
+
 
 @RestController
 @RequestMapping("/personagens")
@@ -26,8 +28,8 @@ public class RickAndMortyController {
     }
 
     @JsonView(Views.CharactersSpecies.class)
-    @GetMapping(params = "name")
-    public CharacterDTO getCharactersByName(@RequestParam String name) {
+    @GetMapping("/{name}")
+    public CharacterDTO getCharactersByName(@PathVariable String name) {
         return rickAndMortyService.getCharactersByName(name);
     }
 }
