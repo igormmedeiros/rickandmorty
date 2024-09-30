@@ -1,39 +1,43 @@
 package com.rickandmortyapi.service;
 
-import com.rickandmortyapi.client.RickAndMortyClient;
 import com.rickandmortyapi.dto.CharacterDTO;
 import com.rickandmortyapi.dto.RickAndMortyResponseDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
+
+import java.util.Objects;
 
 @Service
 public class RickAndMortyService {
 
     @Autowired
-    private RickAndMortyClient rickAndMortyClient;
+    private WebClient webClient;
 
     @Cacheable(value = "rickAndMortyCache", key = "#page")
     public RickAndMortyResponseDTO getCharacters(int page) {
-            return rickAndMortyClient.getCharacters(page);
+        Mono<RickAndMortyResponseDTO> response = webClient.get()
+                .uri(uriBuilder -> uriBuilder.path("/character")
+                        .queryParam("page", page)
+                        .build())
+                .retrieve()
+                .bodyToMono(RickAndMortyResponseDTO.class);
+
+        return response.block();
     }
 
     @Cacheable(value = "rickAndMortyCache", key = "#name")
     public CharacterDTO getCharactersByName(String name) {
-        RickAndMortyResponseDTO response = rickAndMortyClient.getCharactersByName(name);
+        Mono<RickAndMortyResponseDTO> response = webClient.get()
+                .uri(uriBuilder -> uriBuilder.path("/character")
+                        .queryParam("name", name)
+                        .build())
+                .retrieve()
+                .bodyToMono(RickAndMortyResponseDTO.class);
 
-        if (response != null && response.getResults() != null) {
-            return response.getResults().stream()
-                    .findFirst()
-                    .map(character -> {
-                        CharacterDTO characterSpecie = new CharacterDTO();
-                        characterSpecie.setId(character.getId());
-                        characterSpecie.setName(character.getName());
-                        characterSpecie.setSpecies(character.getSpecies());
-                        return character;
-                    })
-                    .orElseThrow(() -> new RuntimeException("Character not found"));
-        }
-        throw new RuntimeException("Character not found");
+        RickAndMortyResponseDTO dto = response.block();
+        return Objects.requireNonNull(dto).getResults().stream().findFirst().orElse(null);
     }
 }
